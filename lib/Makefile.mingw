@@ -96,11 +96,14 @@ LIB_OBJ = app_ipc.o \
 	proxy_info.o \
 	str_util.o \
 	shmem.o \
-	stackwalker_win.o \
 	url.o \
 	util.o \
 	win_util.o \
 	wslinfo.o
+
+ifndef OS_WINARM64
+    LIB_OBJ += stackwalker_win.o
+endif
 
 ZIP_OBJ = zip/boinc_zip.o
 
