@@ -83,7 +83,7 @@ win_sources = \
     win_util.cpp \
     wslinfo.cpp
 if !OS_WINARM64
-win_sources +=
+win_sources += \
     stackwalker_win.cpp
 endif
 win_headers = \

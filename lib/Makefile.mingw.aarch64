@@ -96,7 +96,6 @@ LIB_OBJ = app_ipc.o \
 	proxy_info.o \
 	str_util.o \
 	shmem.o \
-	stackwalker_win.o \
 	url.o \
 	util.o \
 	win_util.o \
@@ -128,13 +127,11 @@ INCS = -I"$(BOINC_SRC)" -I"$(BOINC_SRC)/db" -I"$(BOINC_SRC)/lib" -I"$(BOINC_SRC)
 
 OPTFLAGS = -O3
 # various cpp & gcc flags (for both C and C++ mode)
-# set NOCYGWIN=-mno-cygwin to build non-Cygwin Windows libs under Cygwin
-# -D_WIN32_WINDOWS=0x0410 sets to use Win98 API
 WINVERFLAGS = -D_WINDOWS -D_WIN32 -DWIN32 -DWINVER=0x0500 -D_WIN32_WINNT=0x0500 -D_MT
 HAVEFLAGS = -DHAVE_STRCASECMP
 CCXXFLAGS = $(INCS) $(DEBUG) --include $(BOINC_SRC)/version.h -DEINSTEINATHOME_CROSS_BUILD -DMINGW_WIN32 \
-	$(HAVEFLAGS) $(WINVERFLAGS) -DBOINC \
-	-DNODB -D_CONSOLE -fexceptions $(OPTFLAGS) $(NOCYGWIN)
+        $(HAVEFLAGS) $(WINVERFLAGS) -DBOINC \
+        -DNODB -D_CONSOLE -fexceptions $(OPTFLAGS) $(NOCYGWIN)
 
 # flags for compiling boinc_zip
 ZIP_VCPROJ_FLAGS = -DWIN32 -D_LIB -DDLL -D_CRT_SECURE_NO_WARNINGS
@@ -187,47 +184,47 @@ $(ZIP_BIN): zip $(ZIP_OBJ)
 
 # libtool libboinc_api
 %.lo: $(BOINC_SRC)/api/%.cpp
-	$(LIBTOOL) --mode=compile --tag=CXX $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+        $(LIBTOOL) --mode=compile --tag=CXX $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 %.lo: $(BOINC_SRC)/lib/%.cpp
-	$(LIBTOOL) --mode=compile --tag=CXX $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+        $(LIBTOOL) --mode=compile --tag=CXX $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 # for the wrapper
 wrapper.o: $(BOINC_SRC)/samples/wrapper/wrapper.cpp
-	$(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+        $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 %.o: $(BOINC_SRC)/samples/wrapper/%.c
-	$(CC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+        $(CC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 zip:
-	mkdir -p $@
+        mkdir -p $@
 zip/%.o: $(BOINC_SRC)/zip/%.cpp
-	$(CXX) -c $< -o $@ $(ZIP_FLAGS)
+        $(CXX) -c $< -o $@ $(ZIP_FLAGS)
 $(BOINC_SRC)/svn_version.h:
-	cd $(BOINC_SRC) && sh ./generate_svn_version.sh
+        cd $(BOINC_SRC) && sh ./generate_svn_version.sh
 
 # additional targets
 
 install: $(BIN) $(API_BIN) $(HEADERS)
-	mkdir -p $(BOINC_PREFIX)/include/boinc $(BOINC_PREFIX)/lib
-	cp $(HEADERS) $(BOINC_PREFIX)/include/boinc
-	$(RANLIB) $(BIN) $(API_BIN)
-	cp $(BIN) $(API_BIN) $(BOINC_PREFIX)/lib
+        mkdir -p $(BOINC_PREFIX)/include/boinc $(BOINC_PREFIX)/lib
+        cp $(HEADERS) $(BOINC_PREFIX)/include/boinc
+        $(RANLIB) $(BIN) $(API_BIN)
+        cp $(BIN) $(API_BIN) $(BOINC_PREFIX)/lib
 
 install-la: $(BIN) $(API_LIB) $(HEADERS)
-	mkdir -p $(BOINC_PREFIX)/include/boinc $(BOINC_PREFIX)/lib
-	cp $(HEADERS) $(BOINC_PREFIX)/include/boinc
-	$(RANLIB) $(BIN)
-	cp $(BIN) $(BOINC_PREFIX)/lib
-	$(LIBTOOL) --mode=install cp $(API_LIB) $(BOINC_PREFIX)/lib
+        mkdir -p $(BOINC_PREFIX)/include/boinc $(BOINC_PREFIX)/lib
+        cp $(HEADERS) $(BOINC_PREFIX)/include/boinc
+        $(RANLIB) $(BIN)
+        cp $(BIN) $(BOINC_PREFIX)/lib
+        $(LIBTOOL) --mode=install cp $(API_LIB) $(BOINC_PREFIX)/lib
 
 install-zip: $(ZIP_BIN) $(ZIP_HEADERS)
-	mkdir -p $(BOINC_PREFIX)/include/ $(BOINC_PREFIX)/lib
-	cp $(ZIP_HEADERS) $(BOINC_PREFIX)/include/
-	$(RANLIB) $(ZIP_BIN)
-	cp $(ZIP_BIN) $(BOINC_PREFIX)/lib
+        mkdir -p $(BOINC_PREFIX)/include/ $(BOINC_PREFIX)/lib
+        cp $(ZIP_HEADERS) $(BOINC_PREFIX)/include/
+        $(RANLIB) $(ZIP_BIN)
+        cp $(ZIP_BIN) $(BOINC_PREFIX)/lib
 
 uninstall:
-	${RM} -rf $(BOINC_PREFIX)/include/boinc
-	( cd $(BOINC_PREFIX)/lib && $(RM) -f $(BIN) $(API_BIN) $(API_LIB) || exit 0 )
+        ${RM} -rf $(BOINC_PREFIX)/include/boinc
+        ( cd $(BOINC_PREFIX)/lib && $(RM) -f $(BIN) $(API_BIN) $(API_LIB) || exit 0 )
 
 clean:
-	${RM} -rf *.o $(BIN) $(API_BIN) $(API_LIB) $(OCL_BIN) $(LIB_BIN) $(GPH_BIN) .libs $(ZIP_BIN) zip wrapper.o wrapper.exe
+        ${RM} -rf *.o $(BIN) $(API_BIN) $(API_LIB) $(OCL_BIN) $(LIB_BIN) $(GPH_BIN) .libs $(ZIP_BIN) zip wrapper.o wrapper.exe
