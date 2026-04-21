@@ -184,47 +184,47 @@ $(ZIP_BIN): zip $(ZIP_OBJ)
 
 # libtool libboinc_api
 %.lo: $(BOINC_SRC)/api/%.cpp
-        $(LIBTOOL) --mode=compile --tag=CXX $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(LIBTOOL) --mode=compile --tag=CXX $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 %.lo: $(BOINC_SRC)/lib/%.cpp
-        $(LIBTOOL) --mode=compile --tag=CXX $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(LIBTOOL) --mode=compile --tag=CXX $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 # for the wrapper
 wrapper.o: $(BOINC_SRC)/samples/wrapper/wrapper.cpp
-        $(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 %.o: $(BOINC_SRC)/samples/wrapper/%.c
-        $(CC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+	$(CC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 zip:
-        mkdir -p $@
+	mkdir -p $@
 zip/%.o: $(BOINC_SRC)/zip/%.cpp
-        $(CXX) -c $< -o $@ $(ZIP_FLAGS)
+	$(CXX) -c $< -o $@ $(ZIP_FLAGS)
 $(BOINC_SRC)/svn_version.h:
-        cd $(BOINC_SRC) && sh ./generate_svn_version.sh
+	cd $(BOINC_SRC) && sh ./generate_svn_version.sh
 
 # additional targets
 
 install: $(BIN) $(API_BIN) $(HEADERS)
-        mkdir -p $(BOINC_PREFIX)/include/boinc $(BOINC_PREFIX)/lib
-        cp $(HEADERS) $(BOINC_PREFIX)/include/boinc
-        $(RANLIB) $(BIN) $(API_BIN)
-        cp $(BIN) $(API_BIN) $(BOINC_PREFIX)/lib
+	mkdir -p $(BOINC_PREFIX)/include/boinc $(BOINC_PREFIX)/lib
+	cp $(HEADERS) $(BOINC_PREFIX)/include/boinc
+	$(RANLIB) $(BIN) $(API_BIN)
+	cp $(BIN) $(API_BIN) $(BOINC_PREFIX)/lib
 
 install-la: $(BIN) $(API_LIB) $(HEADERS)
-        mkdir -p $(BOINC_PREFIX)/include/boinc $(BOINC_PREFIX)/lib
-        cp $(HEADERS) $(BOINC_PREFIX)/include/boinc
-        $(RANLIB) $(BIN)
-        cp $(BIN) $(BOINC_PREFIX)/lib
-        $(LIBTOOL) --mode=install cp $(API_LIB) $(BOINC_PREFIX)/lib
+	mkdir -p $(BOINC_PREFIX)/include/boinc $(BOINC_PREFIX)/lib
+	cp $(HEADERS) $(BOINC_PREFIX)/include/boinc
+	$(RANLIB) $(BIN)
+	cp $(BIN) $(BOINC_PREFIX)/lib
+	$(LIBTOOL) --mode=install cp $(API_LIB) $(BOINC_PREFIX)/lib
 
 install-zip: $(ZIP_BIN) $(ZIP_HEADERS)
-        mkdir -p $(BOINC_PREFIX)/include/ $(BOINC_PREFIX)/lib
-        cp $(ZIP_HEADERS) $(BOINC_PREFIX)/include/
-        $(RANLIB) $(ZIP_BIN)
-        cp $(ZIP_BIN) $(BOINC_PREFIX)/lib
+	mkdir -p $(BOINC_PREFIX)/include/ $(BOINC_PREFIX)/lib
+	cp $(ZIP_HEADERS) $(BOINC_PREFIX)/include/
+	$(RANLIB) $(ZIP_BIN)
+	cp $(ZIP_BIN) $(BOINC_PREFIX)/lib
 
 uninstall:
-        ${RM} -rf $(BOINC_PREFIX)/include/boinc
-        ( cd $(BOINC_PREFIX)/lib && $(RM) -f $(BIN) $(API_BIN) $(API_LIB) || exit 0 )
+	${RM} -rf $(BOINC_PREFIX)/include/boinc
+	( cd $(BOINC_PREFIX)/lib && $(RM) -f $(BIN) $(API_BIN) $(API_LIB) || exit 0 )
 
 clean:
-        ${RM} -rf *.o $(BIN) $(API_BIN) $(API_LIB) $(OCL_BIN) $(LIB_BIN) $(GPH_BIN) .libs $(ZIP_BIN) zip wrapper.o wrapper.exe
+	${RM} -rf *.o $(BIN) $(API_BIN) $(API_LIB) $(OCL_BIN) $(LIB_BIN) $(GPH_BIN) .libs $(ZIP_BIN) zip wrapper.o wrapper.exe
