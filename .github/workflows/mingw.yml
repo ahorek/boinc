@@ -74,9 +74,10 @@ jobs:
         if: success() && matrix.arch == 'aarch64'
         run: |
           sudo apt-get install -y wget apt-transport-https software-properties-common doxygen
-          wget -q https://github.com/mstorsjo/llvm-mingw/releases/download/20260407/llvm-mingw-20260407-msvcrt-ubuntu-22.04-x86_64.tar.xz
-          tar -Jxf llvm-mingw-20260407-msvcrt-ubuntu-22.04-x86_64.tar.xz
-          echo "$GITHUB_WORKSPACE/llvm-mingw-20260407-msvcrt-ubuntu-22.04-x86_64/bin" >> $GITHUB_PATH
+          wget -q https://github.com/mstorsjo/llvm-mingw/releases/download/20260421/llvm-mingw-20260421-msvcrt-ubuntu-22.04-x86_64.tar.xz
+          echo "18488138efd8d621930fa85c86c3e3eb9967c0bfa253e1f6f73c5212f7180f31 llvm-mingw-20260421-msvcrt-ubuntu-22.04-x86_64.tar.xz" | sha256sum -c -
+          tar -Jxf llvm-mingw-20260421-msvcrt-ubuntu-22.04-x86_64.tar.xz
+          echo "$GITHUB_WORKSPACE/llvm-mingw-20260421-msvcrt-ubuntu-22.04-x86_64/bin" >> $GITHUB_PATH
 
       - name: Build libs (x86_64)
         if: matrix.type == 'libs-mingw' && matrix.arch == 'x86_64'
