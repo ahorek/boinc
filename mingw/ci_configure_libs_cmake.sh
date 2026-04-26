@@ -30,7 +30,7 @@ fi
 BUILD_DIR="$PWD/3rdParty/$PLATFORM_NAME"
 VCPKG_ROOT="$BUILD_DIR/vcpkg"
 VCPKG_PORTS="$PWD/3rdParty/vcpkg_ports"
-TRIPLET="arm64-windows-static"
+TRIPLET="x64-mingw-static"
 
 export VCPKG_DIR="$VCPKG_ROOT/installed/$TRIPLET"
 
