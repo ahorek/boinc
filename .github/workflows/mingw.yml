@@ -34,6 +34,8 @@ jobs:
         exclude:
           - arch: aarch64
             type: apps-mingw-vcpkg
+          - arch: aarch64
+            type: libs-mingw-cmake
       fail-fast: false
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
