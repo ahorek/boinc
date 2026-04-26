@@ -35,7 +35,7 @@ env:
 
 jobs:
   build:
-    name: ${{ matrix.arch }}-${{ matrix.type }}-build
+    name: ${{ matrix.type }}-${{ matrix.arch }}-build
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -73,7 +73,6 @@ jobs:
       - name: Install aarch64 llvm-mingw toolchain
         if: success() && matrix.arch == 'aarch64'
         run: |
-          sudo apt-get install -y wget apt-transport-https software-properties-common doxygen
           wget -q https://github.com/mstorsjo/llvm-mingw/releases/download/20260421/llvm-mingw-20260421-msvcrt-ubuntu-22.04-x86_64.tar.xz
           echo "18488138efd8d621930fa85c86c3e3eb9967c0bfa253e1f6f73c5212f7180f31 llvm-mingw-20260421-msvcrt-ubuntu-22.04-x86_64.tar.xz" | sha256sum -c -
           tar -Jxf llvm-mingw-20260421-msvcrt-ubuntu-22.04-x86_64.tar.xz
@@ -87,7 +86,7 @@ jobs:
         if: success() && matrix.type == 'libs-mingw' && matrix.arch == 'aarch64'
         run: cd lib && MINGW=aarch64-w64-mingw32 make -f Makefile.mingw
 
-      - name: Install Powershell (vcpkg)
+      - name: Install Powershell for vcpkg
         if: success() && matrix.type == 'apps-mingw-vcpkg'
         run: |
           sudo apt install -y wget apt-transport-https software-properties-common doxygen
@@ -126,7 +125,7 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: mingw_logs_${{ matrix.arch }}_${{ matrix.type }}_${{ github.event.pull_request.head.sha }}
+          name: mingw_logs_${{ matrix.type }}_${{ matrix.arch }}_${{ github.event.pull_request.head.sha }}
           path: deploy/logs.7z
 
       - name: Prepare artifacts for deploy
@@ -137,5 +136,5 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: ${{! contains(matrix.type, 'libs')}}
         with:
-          name: win_${{ matrix.arch }}_${{ matrix.type }}_${{ github.event.pull_request.head.sha }}
+          name: win_${{ matrix.type }}_${{ matrix.arch }}_${{ github.event.pull_request.head.sha }}
           path: deploy/win_${{ matrix.type }}.7z
