@@ -32,7 +32,7 @@ ifdef MINGW
     RANLIB = $(MINGW)-ranlib
 endif
 
-ifeq ($(ARCH),arm64)
+ifeq ($(findstring aarch64,$(shell $(CXX) -dumpmachine)),aarch64)
     AARCH64_BUILD = 1
 endif
 
