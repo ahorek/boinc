@@ -64,7 +64,7 @@ jobs:
 
       - name: Make libs with mingw
         if: success() && matrix.type == 'libs-mingw'
-        run: cd lib && MINGW=aarch64-w64-mingw32 make -f Makefile.mingw.aarch64
+        run: cd lib && MINGW=aarch64-w64-mingw32 make -f Makefile.mingw
       - name: Install Powershell for vcpkg
         if: success() && matrix.type == 'apps-mingw-vcpkg'
         run: |
