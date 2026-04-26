@@ -130,6 +130,7 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <signal.h>
 
 #include "toml.h"
@@ -167,6 +168,7 @@ struct RSC_USAGE {
 };
 
 // verbosity levels
+#define VERBOSE_NONE    0
 #define VERBOSE_STD     1
     // include only start/pause/end commands
 #define VERBOSE_ALL     2
@@ -188,7 +190,7 @@ struct CONFIG {
         // additional args for docker build command
     string create_args;
         // additional args for docker create command
-    int verbose;
+    int verbose;    // see above
     bool use_gpu;
         // tell Docker to enable GPU access
     int web_graphics_guest_port;
@@ -242,12 +244,21 @@ DOCKER_TYPE docker_type;
 string wsl_distro_name;
 double cpu_time = 0;
 
+inline bool verbose_std() {
+    return config.verbose >= VERBOSE_STD;
+}
+
+inline bool verbose_all() {
+    return config.verbose >= VERBOSE_ALL;
+}
+
 // parse job config file (job.toml)
 //
 int parse_config_file() {
     // defaults
     config.workdir = "/app";
     config.use_gpu = false;
+    config.verbose = VERBOSE_STD;
 
     std::ifstream ifs(config_file);
     if (ifs.fail()) {
@@ -401,7 +412,7 @@ void get_image_name() {
 int image_exists(bool &exists) {
     vector<string> out;
 
-    int retval = docker_conn.command("images", out);
+    int retval = docker_conn.command("images", out, verbose_std());
     if (retval) return retval;
     string image_name_space = image_name + string(" ");
     for (string line: out) {
@@ -420,7 +431,7 @@ int build_image() {
     snprintf(cmd, sizeof(cmd), "build \"%s\" -t %s -f %s %s",
         escaped_cwd, image_name, dockerfile, config.build_args.c_str()
     );
-    int retval = docker_conn.command(cmd, out);
+    int retval = docker_conn.command(cmd, out, verbose_std());
     if (retval) return retval;
     return 0;
 }
@@ -473,7 +484,7 @@ int get_container_state(int &state) {
 
         container_name
     );
-    retval = docker_conn.command(cmd, out);
+    retval = docker_conn.command(cmd, out, verbose_all());
     if (retval) return retval;
     for (string line: out) {
         char buf[256];
@@ -606,7 +617,7 @@ int create_container() {
 
     strcat(cmd, " ");
     strcat(cmd, image_name);
-    retval = docker_conn.command(cmd, out);
+    retval = docker_conn.command(cmd, out, verbose_std());
     if (retval) {
         fprintf(stderr, "create command failed: %d\n", retval);
         return retval;
@@ -627,7 +638,7 @@ int container_op(const char *op) {
     char cmd[1024];
     vector<string> out;
     snprintf(cmd, sizeof(cmd), "%s %s", op, container_name);
-    int retval = docker_conn.command(cmd, out);
+    int retval = docker_conn.command(cmd, out, verbose_std());
     if (retval) {
         fprintf(stderr, "%s command failed: %d\n", op, retval);
         return retval;
@@ -648,7 +659,7 @@ void cleanup() {
     vector<string> out;
 
     snprintf(cmd, sizeof(cmd), "logs %s", container_name);
-    docker_conn.command(cmd, out);
+    docker_conn.command(cmd, out, verbose_std());
     fprintf(stderr, "stderr from container:\n");
     for (string line: out) {
         fprintf(stderr, "%s", line.c_str());
@@ -656,13 +667,13 @@ void cleanup() {
     fprintf(stderr, "stderr end\n");
 
     snprintf(cmd, sizeof(cmd), "container rm %s", container_name);
-    docker_conn.command(cmd, out);
+    docker_conn.command(cmd, out, verbose_std());
 
     // don't remove image if it was specified in config
     //
     if (config.image_name.empty()) {
         snprintf(cmd, sizeof(cmd), "image rm %s", image_name);
-        docker_conn.command(cmd, out);
+        docker_conn.command(cmd, out, verbose_std());
     }
 }
 
@@ -732,7 +743,7 @@ JOB_STATUS poll_app() {
     int retval;
 
     snprintf(cmd, sizeof(cmd), "ps --all -f \"name=%s\"", container_name);
-    retval = docker_conn.command(cmd, out);
+    retval = docker_conn.command(cmd, out, verbose_all());
     if (retval) return JOB_FAIL;
     for (string line: out) {
         if (strstr(line.c_str(), container_name)) {
@@ -751,6 +762,16 @@ JOB_STATUS poll_app() {
         }
     }
     return JOB_FAIL;
+}
+
+// print the given message, but only once
+//
+void print_once(const string& msg) {
+    static vector<string> msgs;
+    if (std::find(msgs.begin(), msgs.end(), msg) == msgs.end()) {
+        fprintf(stderr, "%s", msg.c_str());
+        msgs.push_back(msg);
+    }
 }
 
 // Get CPU and mem usage.
@@ -773,9 +794,15 @@ int get_stats(RSC_USAGE &ru) {
         container_name
     );
 #endif
-    retval = docker_conn.command(cmd, out);
-    if (retval) return -1;
-    if (out.empty()) return -1;
+    retval = docker_conn.command(cmd, out, verbose_all());
+    if (retval) {
+        print_once(string("stats command failed\n"));
+        return -1;
+    }
+    if (out.empty()) {
+        print_once(string("stats command returned nothing\n"));
+        return -1;
+    }
 
     // output is like
     // 97.12% 420KiB / 503.8GiB
@@ -793,7 +820,7 @@ int get_stats(RSC_USAGE &ru) {
         }
     }
     if (!found) {
-        fprintf(stderr, "Can't parse stats reply\n");
+        print_once(string("stats command parse failed\n"));
         return -1;
     }
     switch (mem_unit) {
@@ -814,8 +841,12 @@ int get_stats(RSC_USAGE &ru) {
     ru.cpu_frac = cpu_pct/100.;
     ru.wss = mem;
     // sanity checks
-    if (mem == 0 || ru.cpu_frac > aid.ncpus) {
-        fprintf(stderr, "invalid usage stats; using defaults\n");
+    if (mem == 0 ) {
+        print_once(string("stats command returned zero memory\n"));
+        return -1;
+    }
+    if (ru.cpu_frac > aid.ncpus) {
+        print_once(string("stats command returned excessive CPU usage\n"));
         return -1;
     }
     return 0;
@@ -857,7 +888,7 @@ int wsl_init() {
     fprintf(stderr, "Using WSL distro %s\n", dp->distro_name.c_str());
     wsl_distro_name = dp->distro_name;
     docker_type = dp->docker_type;
-    return docker_conn.init(*dp, config.verbose>0);
+    return docker_conn.init(*dp);
 }
 #endif
 
@@ -894,7 +925,7 @@ int main(int argc, char** argv) {
         if (!strcmp(argv[j], "--sporadic")) {
             sporadic = true;
         } else if (!strcmp(argv[j], "--verbose")) {
-            config.verbose = VERBOSE_STD;
+            config.verbose = VERBOSE_ALL;
         } else if (!strcmp(argv[j], "--config")) {
             config_file = argv[++j];
         } else if (!strcmp(argv[j], "--dockerfile")) {
@@ -977,7 +1008,7 @@ int main(int argc, char** argv) {
         }
         docker_type = aid.host_info.docker_type;
     }
-    retval = docker_conn.init(docker_type, config.verbose>0);
+    retval = docker_conn.init(docker_type);
     if (retval) {
         fprintf(stderr, "docker_conn.init() failed: %d\n", retval);
         boinc_finish(1);
